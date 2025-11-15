@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     
     # CORS
     ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "chrome-extension://*"]
+
+    # Supabase
+    SUPABASE_URL: str = ""
+    SUPABASE_KEY: str = ""
     
     # ML Models
     MODEL_CACHE_DIR: str = "./models"

@@ -34,6 +34,7 @@ pydantic-settings = "^2.7.0"
 httpx = "^0.28.1"  # Async HTTP client
 loguru = "^0.7.3"   # Better logging
 # python-multipart included with fastapi[standard]
+supabase = "^2.24.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
