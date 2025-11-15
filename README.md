@@ -42,29 +42,42 @@ A FastAPI-based backend service that powers the CogniSense platform for tracking
 ```
 cognisense-backend/
 ├── app/
-│   ├── main.py                    # FastAPI app entry point
-│   ├── core/                      # Core configuration
-│   │   ├── config.py             # Pydantic settings
-│   │   ├── security.py           # JWT & password hashing
-│   │   └── logging.py            # Loguru configuration
-│   ├── ml/                        # Machine Learning
-│   │   ├── model_manager.py      # Singleton model loader
+│   ├── __init__.py               # Package initialization
+│   ├── main.py                   # FastAPI app entry point
+│   ├── core/                     # Core configuration
+│   │   ├── __init__.py          # Core package initialization
+│   │   ├── config.py            # Pydantic settings
+│   │   ├── logging.py           # Loguru configuration
+│   │   ├── security.py          # JWT & password hashing
+│   │   └── supabase_client.py   # Supabase database client
+│   ├── ml/                       # Machine Learning
+│   │   ├── __init__.py          # ML package initialization
+│   │   ├── emotion_detector.py  # Emotion detection
+│   │   ├── model_manager.py     # Model manager interface
+│   │   ├── model_manager_mock.py # Mock model manager for testing
+│   │   ├── model_manager_real.py # Real model manager implementation
 │   │   ├── sentiment_analyzer.py # Sentiment analysis
-│   │   ├── zero_shot_classifier.py # Content categorization
-│   │   └── emotion_detector.py   # Emotion detection
-│   ├── api/v1/                    # API endpoints
-│   │   ├── router.py             # Main router
-│   │   ├── content.py            # Content analysis endpoints
-│   │   ├── tracking.py           # Time tracking endpoints (TODO)
-│   │   └── dashboard.py          # Dashboard stats (TODO)
-│   ├── models/                    # SQLModel database models (TODO)
-│   ├── schemas/                   # Pydantic request/response schemas (TODO)
-│   └── services/                  # Business logic layer (TODO)
-├── tests/                         # Test suite
-├── docker-compose.yml            # Local dev environment
-├── Dockerfile                     # Production container
-├── pyproject.toml                # Poetry dependencies
-└── .env.example                   # Environment variables template
+│   │   └── zero_shot_classifier.py # Content categorization
+│   └── api/                      # API endpoints
+│       ├── __init__.py          # API package initialization
+│       └── v1/                  # API version 1
+│           ├── __init__.py      # V1 package initialization
+│           ├── router.py        # Main router
+│           ├── content.py       # Content analysis endpoints
+│           └── auth/            # Authentication endpoints
+│               └── auth.py      # Authentication logic
+├── docs/                         # Documentation
+│   └── ARCHITECTURE.md         # System architecture documentation
+├── scripts/                      # Utility scripts
+│   └── run_dev.sh              # Development server startup script
+├── docker-compose.yml           # Local dev environment
+├── Dockerfile                    # Production container
+├── pyproject.toml               # Poetry dependencies
+├── poetry.lock                  # Locked dependency versions
+├── README.md                    # This file
+├── SETUP_COMPLETE.md            # Setup completion guide
+├── TODO.md                      # Development roadmap
+└── .env.example                 # Environment variables template
 ```
 
 ---
