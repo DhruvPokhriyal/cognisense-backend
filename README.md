@@ -104,6 +104,7 @@ cp .env.example .env
 1. Create a new project at [supabase.com](https://supabase.com)
 2. Copy your project URL and anon key to `.env`
 3. Set up your database schema using Supabase dashboard or SQL editor
+4. Turn off `Confirm email` in `Authentication > Providers > Email`
 
 ### 5. Start Development Server
 ```bash
