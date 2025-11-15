@@ -47,3 +47,20 @@ async def get_current_user(request: Request, authorization: str = Header(...)):
 async def read_current_user(current_user=Depends(get_current_user)):
     """Return the authenticated Supabase user payload."""
     return {"user": current_user}
+
+
+@router.post("/signup")
+async def signup(data: SignupRequest):
+    """Register a new user with Supabase (email & password)."""
+    if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="SUPABASE_URL or SUPABASE_KEY not configured")
+
+    try:
+        result = supabase.auth.sign_up({"email": data.email, "password": data.password})
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Signup failed: {str(e)}")
+
+    if not result or not getattr(result, "user", None):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Signup failed: No user returned")
+
+    return {"user": result.user, "session": getattr(result, "session", None)}
