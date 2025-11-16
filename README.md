@@ -128,6 +128,9 @@ Server will be available at: **http://localhost:8000**
 
 API Documentation: **http://localhost:8000/docs**
 
+Additional docs:
+- Dashboard endpoints: `docs/API_DASHBOARD.md` (includes `/dashboard`, `/dashboard/insights`, `/dashboard/settings`)
+
 ---
 
 ## 🐳 Docker Setup (Alternative)
