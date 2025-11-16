@@ -8,6 +8,9 @@ from loguru import logger
 
 # Import routers
 from app.api.v1 import content
+from app.api.v1.dashboard import dashboard
+from app.api.v1.dashboard import insights
+from app.api.v1.dashboard import settings as dashboard_settings
 from app.api.v1 import tracking, categories, dashboard
 
 # Optional auth import
@@ -22,9 +25,11 @@ api_router = APIRouter()
 
 # Include sub-routers
 api_router.include_router(content.router, prefix="/content", tags=["Content Analysis"])
+api_router.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
+api_router.include_router(insights.router, prefix="/dashboard/insights", tags=["Dashboard Insights"])
+api_router.include_router(dashboard_settings.router, prefix="/dashboard/settings", tags=["Dashboard Settings"])
 api_router.include_router(tracking.router, prefix="/tracking", tags=["Tracking"])
 api_router.include_router(categories.router, prefix="/categories", tags=["Categories"])
-api_router.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
 
 # Include auth router if available
 if AUTH_AVAILABLE:
