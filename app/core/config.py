@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # CORS
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "chrome-extension://*"]
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "chrome-extension://*", "http://localhost:5173"]
 
     # Supabase
     SUPABASE_URL: str = ""
