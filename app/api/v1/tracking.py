@@ -112,6 +112,7 @@ async def ingest_activity(payload: ActivityIn):
                 analyze_category=False if override_category else True,
                 analyze_emotions=True,
             )
+            print(f"AnalysisResult {analysis_result}")
             # Attach key fields back into the record for immediate use/echo
             if isinstance(analysis_result, dict):
                 if "sentiment" in analysis_result:
@@ -135,6 +136,8 @@ async def ingest_activity(payload: ActivityIn):
     if not analysis_result and record.get("text"):
         try:
             sentiment = sentiment_analyzer.analyze(record["text"])
+            print("ONLY LOCAL RUN")
+            print(f"sentiment: {sentiment}")
             record["sentiment"] = sentiment
         except Exception as e:
             logger.debug(f"Sentiment analysis failed: {e}")
@@ -144,6 +147,7 @@ async def ingest_activity(payload: ActivityIn):
         else:
             try:
                 cat = zero_shot.classify_with_group(record["text"])
+                print(f"CATEGORY: {cat}")
                 if not cat.get("error"):
                     record["classified_category"] = cat.get("labels", [None])[0]
                     record["category_group"] = cat.get("category_group")
@@ -153,6 +157,7 @@ async def ingest_activity(payload: ActivityIn):
 
         try:
             emotions = emotion_detector.detect(record["text"])
+            print(f"EMOTION: {emotions}")
             record["emotions"] = emotions
         except Exception as e:
             logger.debug(f"Emotion detection failed: {e}")

@@ -32,13 +32,14 @@ class SentimentAnalyzer:
         try:
             model = self.model_manager.get_sentiment_analyzer()
             
-            # Truncate text if too long (tensor size is usually 614 tokens)
-            max_length = 614
+            # Truncate text if too long (tensor size is usually 512 tokens)
+            max_length = 512
             if len(text.split()) > max_length:
                 text = ' '.join(text.split()[:max_length])
                 logger.warning(f"Text truncated to {max_length} words for sentiment analysis")
             
-            result = model(text)[0]
+            # Ensure tokenizer-level truncation to model max length
+            result = model(text, truncation=True, max_length=512)[0]
             
             # Normalize label to uppercase
             result['label'] = result['label'].upper()

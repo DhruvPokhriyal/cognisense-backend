@@ -42,7 +42,8 @@ class EmotionDetector:
                 text = ' '.join(text.split()[:max_length])
                 logger.warning(f"Text truncated to {max_length} words for emotion detection")
             
-            results = model(text)[0]  # Returns list of all emotions
+            # Ensure inputs never exceed model max length at token level
+            results = model(text, truncation=True, max_length=512)[0]  # Returns list of all emotions
             
             # Sort by score descending
             results = sorted(results, key=lambda x: x['score'], reverse=True)
