@@ -47,7 +47,51 @@ All endpoints are versioned under `/api/v1/`
 
 ## Endpoints Reference
 
-### Health Check
+### Default/Health
+
+#### GET /
+
+Root endpoint to verify service is running.
+
+**Request:**
+- No parameters required
+- No authentication required
+
+**Response:**
+```json
+{
+    "status": "healthy",
+    "service": "CogniSense Backend",
+    "version": "1.0.0"
+}
+```
+
+**Status Codes:**
+- `200`: Service is healthy and running
+
+---
+
+#### GET /health
+
+Detailed health check with ML model status.
+
+**Request:**
+- No parameters required
+- No authentication required
+
+**Response:**
+```json
+{
+    "status": "healthy",
+    "database": "connected",
+    "ml_models_loaded": true
+}
+```
+
+**Status Codes:**
+- `200`: API is healthy and running
+
+---
 
 #### GET /api/v1/ping
 
@@ -483,21 +527,72 @@ Retrieves user's site categorization preferences.
 }
 ```
 
+#### POST /api/v1/user-domain-category/user_domain_category/save
+
+Save user domain category and time limit settings.
+
+**Request Body:**
+```json
+{
+    "user_id": "user123",
+    "domain_pattern": "github.com",
+    "category": "Productivity",
+    "priority": 1,
+    "allowed_minutes": 480
+}
+```
+
+**Parameters:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| user_id | string | Yes | User identifier |
+| domain_pattern | string | Yes | Domain pattern to match |
+| category | string | Yes | Category label |
+| priority | integer | Yes | Priority for matching (higher = more important) |
+| allowed_minutes | integer | Yes | Daily time limit in minutes |
+
+**Response:**
+```json
+{
+    "success": true,
+    "category_result": {
+        "user_id": "user123",
+        "domain_pattern": "github.com",
+        "category": "Productivity",
+        "priority": 1
+    },
+    "limit_result": {
+        "user_id": "user123",
+        "domain": "github.com",
+        "allowed_minutes": 480
+    }
+}
+```
+
+**Status Codes:**
+- `200`: Settings saved successfully
+- `400`: Invalid request data or duplicate key
+- `500`: Server error
+
 ---
 
 ### Dashboard Analytics
 
+All dashboard endpoints require authentication via Supabase JWT token.
+
+**Authentication Required:** Yes (All endpoints)
+
+**Request Header:**
+```
+Authorization: Bearer <SUPABASE_JWT_TOKEN>
+```
+
 #### GET /api/v1/dashboard
 
-Returns main dashboard summary with time-based activity aggregation.
-
-**Authentication Required:** Yes
+Returns main dashboard summary with time-based activity aggregation for the authenticated user.
 
 **Query Parameters:**
 - `timeRange` (optional): "this_week" or "last_week" (default: "this_week")
-
-**Request:**
-- Headers: `Authorization: Bearer <token>`
 
 **Example:**
 ```bash
@@ -556,14 +651,33 @@ curl "http://localhost:8000/api/v1/dashboard?timeRange=this_week" \
 }
 ```
 
+**Notes:**
+- `metrics[].value` is returned in **seconds**
+- `weeklyData` values (Productive, Social, Entertainment) are in **minutes**
+- Category mapping uses user-defined patterns from `user_domain_categories` table
+- Compares current period with previous equal-length period for trend analysis
+
+**Status Codes:**
+- `200`: Dashboard data retrieved successfully
+- `401`: Invalid or expired token
+- `400`: Unable to determine user ID from auth payload
+
+---
+
 #### GET /api/v1/dashboard/insights
 
-Provides detailed insights, alerts, and progress tracking.
+Provides detailed insights, alerts, and progress tracking for the authenticated user.
 
 **Authentication Required:** Yes
 
 **Query Parameters:**
 - `timeRange` (optional): "this_week" or "last_week" (default: "this_week")
+
+**Request:**
+```bash
+curl "http://localhost:8000/api/v1/dashboard/insights?timeRange=this_week" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
 
 **Response:**
 ```json
@@ -586,6 +700,18 @@ Provides detailed insights, alerts, and progress tracking.
             "type": "warning",
             "title": "Social Media Limit",
             "description": "Your usage for 'twitter.com' is 25% above your target for this period. Consider setting app limits."
+        },
+        {
+            "id": "alert_neg_content",
+            "type": "warning",
+            "title": "Negative Content Alert",
+            "description": "Your negative content consumption increased by 8% this period. Consider diversifying your sources."
+        },
+        {
+            "id": "alert_bubble",
+            "type": "info",
+            "title": "Content Bubble Detected",
+            "description": "You've been in a tech content bubble. Try exploring other topics for a balanced perspective."
         }
     ],
     "weeklyProgress": [
@@ -624,11 +750,29 @@ Provides detailed insights, alerts, and progress tracking.
 }
 ```
 
+**Notes:**
+- Emotional balance aggregates emotions from `content_analysis` table for the period
+- Alerts are heuristic and compare current vs previous equal-length period
+- Progress tracking is based on simple goal metrics
+
+**Status Codes:**
+- `200`: Insights retrieved successfully
+- `401`: Invalid or expired token
+- `400`: Unable to determine user ID from auth payload
+
+---
+
 #### GET /api/v1/dashboard/settings
 
-Returns user's domain categorization and time limit settings.
+Returns user's domain categorization and time limit settings for the authenticated user.
 
 **Authentication Required:** Yes
+
+**Request:**
+```bash
+curl "http://localhost:8000/api/v1/dashboard/settings" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
 
 **Response:**
 ```json
@@ -658,20 +802,106 @@ Returns user's domain categorization and time limit settings.
 }
 ```
 
-#### GET /api/v1/dashboard/summary/{user_id} **(Deprecated)**
+**Notes:**
+- `category` is derived from best substring match against `domain_pattern` in `user_domain_categories` (nullable)
+- `limit` is `allowed_minutes` per day from `user_domain_limits` table (nullable, integer minutes)
+- Combines data from recent sessions, user category patterns, and user time limits
 
-*Note: This endpoint is being replaced by the new authenticated dashboard endpoints above.*
+**Status Codes:**
+- `200`: Settings retrieved successfully
+- `401`: Invalid or expired token
+- `400`: Unable to determine user ID from auth payload
+
+---
+
+### Dashboard Summary
+
+#### GET /api/v1/dashboard-summary/summary/{user_id}
 
 Provides aggregated activity summary with time-based filtering.
 
 **Query Parameters:**
 - `period` (optional): "daily" or "weekly" (default: "weekly")
 
-#### GET /api/v1/dashboard/sites/{user_id} **(Deprecated)**
+**Example:**
+```bash
+curl "http://localhost:8000/api/v1/dashboard-summary/summary/user123?period=weekly"
+```
 
-*Note: This endpoint is being replaced by the new authenticated dashboard endpoints above.*
+**Response:**
+```json
+{
+    "user_id": "user123",
+    "summary": {
+        "period": "weekly",
+        "records_counted": 42,
+        "total_time_seconds": 14400,
+        "top_sites": [
+            {"site": "https://github.com", "time_seconds": 7200},
+            {"site": "https://youtube.com", "time_seconds": 3600},
+            {"site": "https://twitter.com", "time_seconds": 1800}
+        ],
+        "categories": [
+            {"category": "Programming", "value": 7200, "proportion": 0.5},
+            {"category": "Entertainment", "value": 3600, "proportion": 0.25},
+            {"category": "Social Media", "value": 1800, "proportion": 0.125}
+        ],
+        "sentiments": [
+            {"sentiment": "POSITIVE", "count": 30, "proportion": 0.71},
+            {"sentiment": "NEGATIVE", "count": 12, "proportion": 0.29}
+        ]
+    }
+}
+```
+
+**Status Codes:**
+- `200`: Summary retrieved successfully
+- `400`: Invalid request parameters
+
+---
+
+#### GET /api/v1/dashboard-summary/sites/{user_id}
 
 Returns table view of sites with aggregated metrics.
+
+**Query Parameters:**
+- `limit` (optional): Number of sites to return (1-1000, default: 100)
+
+**Example:**
+```bash
+curl "http://localhost:8000/api/v1/dashboard-summary/sites/user123?limit=50"
+```
+
+**Response:**
+```json
+{
+    "user_id": "user123",
+    "sites": [
+        {
+            "site": "https://github.com",
+            "time_seconds": 7200,
+            "visits": 15,
+            "category": "Programming"
+        },
+        {
+            "site": "https://youtube.com",
+            "time_seconds": 3600,
+            "visits": 8,
+            "category": "Entertainment"
+        },
+        {
+            "site": "https://twitter.com",
+            "time_seconds": 1800,
+            "visits": 12,
+            "category": "Social Media"
+        }
+    ]
+}
+```
+
+**Status Codes:**
+- `200`: Sites data retrieved successfully
+- `400`: Invalid request parameters
 
 ---
 
