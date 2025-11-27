@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     
     
     # CORS
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "chrome-extension://*", "*"]
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "chrome-extension://*", "http://localhost:5173", "*"]
 
     # Supabase
     SUPABASE_URL: str = ""

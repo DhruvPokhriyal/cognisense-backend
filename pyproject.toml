@@ -36,6 +36,9 @@ loguru = "^0.7.3"   # Better logging
 # python-multipart included with fastapi[standard]
 supabase = "^2.24.0"
 torch = "^2.9.1"
+bs4 = "^0.0.2"
+lxml = "^6.0.2"
+tldextract = "^5.3.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
