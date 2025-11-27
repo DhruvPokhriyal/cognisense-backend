@@ -6,43 +6,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.core.config import settings
 from app.core.supabase_client import supabase
 from app.api.v1.auth.auth import get_current_user
+from app.ml.zero_shot_classifier import get_dashboard_bucket_mapping
 
 router = APIRouter()
 
 
-# Map fine-grained categories (from zero-shot + overrides) to dashboard buckets
-CATEGORY_TO_BUCKET = {
-    # Productive
-    "Productivity": "productive",
-    "Work": "productive",
-    "Professional Development": "productive",
-    "Business": "productive",
-    "Documentation": "productive",
-    "Education": "productive",
-    "Online Courses": "productive",
-    "Tutorials": "productive",
-    "Academic": "productive",
-    "Programming": "productive",
-    "Research": "productive",
-    "Reference": "productive",
-    "Tools & Utilities": "productive",
-
-    # Social
-    "Social Media": "social",
-    "Communication": "social",
-    "Forums & Discussion": "social",
-    "Dating": "social",
-
-    # Entertainment
-    "Entertainment": "entertainment",
-    "Music": "entertainment",
-    "Movies & TV": "entertainment",
-    "Gaming": "entertainment",
-    "Sports": "entertainment",
-    "Humor & Memes": "entertainment",
-    "Podcasts": "entertainment",
-    "Streaming": "entertainment",
-}
+# Central source of truth for bucket mapping
+CATEGORY_TO_BUCKET = get_dashboard_bucket_mapping()
 
 
 def _get_time_range(range_name: str):
@@ -151,7 +121,13 @@ async def dashboard(timeRange: str = "this_week", current_user=Depends(get_curre
         seconds = max(0, (et - st).total_seconds())
         totals["total"] += seconds
         cat = categorize(s.get("domain"), s.get("url"))
-        bucket = CATEGORY_TO_BUCKET.get(cat, None)
+        bucket = CATEGORY_TO_BUCKET.get(cat)
+        if not bucket:
+            lc = (cat or "").lower()
+            if lc in ("productive", "social", "entertainment"):
+                bucket = lc
+            else:
+                bucket = "productive"  # default fallback to ensure totals match
         if bucket == "productive" or cat.lower() == "productive":
             totals["productive"] += seconds
         elif bucket == "social" or cat.lower() in ("social", "social_media", "socialmedia", "social-media"):
@@ -181,7 +157,13 @@ async def dashboard(timeRange: str = "this_week", current_user=Depends(get_curre
         seconds = max(0, (et - st).total_seconds())
         prev_totals["total"] += seconds
         cat = categorize(s.get("domain"), s.get("url"))
-        bucket = CATEGORY_TO_BUCKET.get(cat, None)
+        bucket = CATEGORY_TO_BUCKET.get(cat)
+        if not bucket:
+            lc = (cat or "").lower()
+            if lc in ("productive", "social", "entertainment"):
+                bucket = lc
+            else:
+                bucket = "productive"
         if bucket == "productive" or cat.lower() == "productive":
             prev_totals["productive"] += seconds
         elif bucket == "social" or cat.lower() in ("social", "social_media", "socialmedia", "social-media"):

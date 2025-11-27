@@ -159,39 +159,8 @@ class ZeroShotClassifier:
     def get_category_groups(self) -> Dict[str, List[str]]:
         """
         Return categories organized by broad groups for dashboard analytics
-        
-        Returns:
-            Dictionary mapping group names to lists of categories
         """
-        return {
-            "Productive": [
-                "Productivity", "Work", "Professional Development", "Business", 
-                "Documentation", "Education", "Online Courses", "Tutorials", 
-                "Academic", "Programming", "Research", "Reference", "Tools & Utilities"
-            ],
-            "Social": [
-                "Social Media", "Communication", "Forums & Discussion", "Dating"
-            ],
-            "Entertainment": [
-                "Entertainment", "Music", "Movies & TV", "Gaming", "Sports", 
-                "Humor & Memes", "Podcasts", "Streaming"
-            ],
-            "Information": [
-                "News", "Politics", "World Events", "Science", "Technology"
-            ],
-            "Lifestyle": [
-                "Health & Wellness", "Fitness", "Food & Cooking", "Travel", 
-                "Hobbies", "DIY & Crafts", "Fashion & Beauty", "Relationships", 
-                "Parenting", "Self-Improvement"
-            ],
-            "Commerce": [
-                "Finance", "Shopping", "E-commerce", "Banking", "Investing", "Cryptocurrency"
-            ],
-            "Problematic": [
-                "Adult Content", "Violence", "Misinformation", "Harassment"
-            ],
-            "Other": ["Other", "Search", "Software"]
-        }
+        return CATEGORY_GROUPS
     
     def classify_with_group(self, text: str) -> Dict[str, any]:
         """
@@ -219,3 +188,57 @@ class ZeroShotClassifier:
                 
         result["category_group"] = category_group
         return result
+
+
+# Centralized groups consolidated to three dashboard buckets
+CATEGORY_GROUPS: Dict[str, List[str]] = {
+    "Productive": [
+        # Core productive
+        "Productivity", "Work", "Professional Development", "Business",
+        "Documentation", "Education", "Online Courses", "Tutorials",
+        "Academic", "Programming", "Research", "Reference", "Tools & Utilities",
+        # Former "Information"
+        "News", "Politics", "World Events", "Science", "Technology",
+        # Common utility
+        "Search", "Software"
+    ],
+    "Social": [
+        # Core social
+        "Social Media", "Communication", "Forums & Discussion", "Dating",
+        # Relationship-oriented and problematic folded into Social
+        "Relationships", "Misinformation", "Harassment", "Violence"
+    ],
+    "Entertainment": [
+        # Core entertainment
+        "Entertainment", "Music", "Movies & TV", "Gaming", "Sports",
+        "Humor & Memes", "Podcasts", "Streaming",
+        # Former "Lifestyle"
+        "Health & Wellness", "Fitness", "Food & Cooking", "Travel",
+        "Hobbies", "DIY & Crafts", "Fashion & Beauty", "Parenting",
+        "Self-Improvement",
+        # Former "Commerce"
+        "Finance", "Shopping", "E-commerce", "Banking", "Investing", "Cryptocurrency"
+    ]
+}
+
+
+# Default mapping from groups to dashboard buckets
+_GROUP_TO_BUCKET: Dict[str, str] = {
+    "Productive": "productive",
+    "Social": "social",
+    "Entertainment": "entertainment",
+}
+
+
+def get_dashboard_bucket_mapping() -> Dict[str, str]:
+    """Return a mapping of category -> dashboard bucket.
+
+    Derived from CATEGORY_GROUPS using _GROUP_TO_BUCKET and refined by
+    _CATEGORY_OVERRIDES. This is import-safe (no model load).
+    """
+    mapping: Dict[str, str] = {}
+    for group, cats in CATEGORY_GROUPS.items():
+        bucket = _GROUP_TO_BUCKET[group]
+        for c in cats:
+            mapping[c] = bucket
+    return mapping
