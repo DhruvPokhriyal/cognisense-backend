@@ -10,6 +10,41 @@ from app.api.v1.auth.auth import get_current_user
 router = APIRouter()
 
 
+# Map fine-grained categories (from zero-shot + overrides) to dashboard buckets
+CATEGORY_TO_BUCKET = {
+    # Productive
+    "Productivity": "productive",
+    "Work": "productive",
+    "Professional Development": "productive",
+    "Business": "productive",
+    "Documentation": "productive",
+    "Education": "productive",
+    "Online Courses": "productive",
+    "Tutorials": "productive",
+    "Academic": "productive",
+    "Programming": "productive",
+    "Research": "productive",
+    "Reference": "productive",
+    "Tools & Utilities": "productive",
+
+    # Social
+    "Social Media": "social",
+    "Communication": "social",
+    "Forums & Discussion": "social",
+    "Dating": "social",
+
+    # Entertainment
+    "Entertainment": "entertainment",
+    "Music": "entertainment",
+    "Movies & TV": "entertainment",
+    "Gaming": "entertainment",
+    "Sports": "entertainment",
+    "Humor & Memes": "entertainment",
+    "Podcasts": "entertainment",
+    "Streaming": "entertainment",
+}
+
+
 def _get_time_range(range_name: str):
     now = datetime.now(timezone.utc)
     if range_name == "this_week":
@@ -53,20 +88,44 @@ async def dashboard(timeRange: str = "this_week", current_user=Depends(get_curre
     prev_start = start - (end - start)
     prev_end = start
 
-    # Fetch sessions in range
-    resp = supabase.table("page_view_sessions").select("domain,start_time,end_time").eq("user_id", user_id).gte("start_time", start.isoformat()).lt("start_time", end.isoformat()).execute()
+    # Fetch sessions in range (include url to match content_analysis)
+    resp = supabase.table("page_view_sessions").select("domain,start_time,end_time,url").eq("user_id", user_id).gte("start_time", start.isoformat()).lt("start_time", end.isoformat()).execute()
     if getattr(resp, "error", None):
         raise HTTPException(status_code=502, detail="Failed to fetch sessions")
     sessions = getattr(resp, "data", []) or []
+
+    # Build URL set to look up analysis categories
+    url_set = {s.get("url") for s in sessions if s.get("url")}
+    url_list = list(url_set)
+
+    # Fetch content analysis for these URLs to use system_suggested_category
+    analysis_map: Dict[str, str] = {}
+    if url_list:
+        # Batch the IN queries to avoid size limits
+        batch_size = 100
+        for i in range(0, len(url_list), batch_size):
+            batch = url_list[i:i+batch_size]
+            aresp = supabase\
+                .table("content_analysis")\
+                .select("page_url,system_suggested_category")\
+                .eq("user_id", user_id)\
+                .in_("page_url", batch)\
+                .execute()
+            if getattr(aresp, "data", None):
+                for row in aresp.data:
+                    analysis_map[row.get("page_url")] = row.get("system_suggested_category")
 
     # Fetch user domain categories
     cat_resp = supabase.table("user_domain_categories").select("domain_pattern,category").eq("user_id", user_id).execute()
     categories = getattr(cat_resp, "data", []) or []
 
-    # helper to categorize domain
-    def categorize(domain: str) -> str:
+    # helper to categorize domain/url -> fine category
+    def categorize(domain: str, url: str | None = None) -> str:
         if not domain:
             return "uncategorized"
+        # Prefer system_suggested_category from content_analysis when available
+        if url and url in analysis_map:
+            return analysis_map.get(url) or "uncategorized"
         domain_l = domain.lower()
         for c in categories:
             pattern = (c.get("domain_pattern") or "").lower()
@@ -91,21 +150,22 @@ async def dashboard(timeRange: str = "this_week", current_user=Depends(get_curre
             continue
         seconds = max(0, (et - st).total_seconds())
         totals["total"] += seconds
-        cat = categorize(s.get("domain"))
-        if cat.lower() == "productive":
+        cat = categorize(s.get("domain"), s.get("url"))
+        bucket = CATEGORY_TO_BUCKET.get(cat, None)
+        if bucket == "productive" or cat.lower() == "productive":
             totals["productive"] += seconds
-        elif cat.lower() in ("social", "social_media", "socialmedia", "social-media"):
+        elif bucket == "social" or cat.lower() in ("social", "social_media", "socialmedia", "social-media"):
             totals["social"] += seconds
-        elif cat.lower() in ("entertainment",):
+        elif bucket == "entertainment" or cat.lower() in ("entertainment",):
             totals["entertainment"] += seconds
         # add to daily
         day_index = (st.date() - start.date()).days
         if 0 <= day_index < 7:
-            if cat.lower() == "productive":
+            if bucket == "productive" or cat.lower() == "productive":
                 days[day_index]["productive"] += seconds
-            elif cat.lower() in ("social", "social_media", "socialmedia", "social-media"):
+            elif bucket == "social" or cat.lower() in ("social", "social_media", "socialmedia", "social-media"):
                 days[day_index]["social"] += seconds
-            elif cat.lower() == "entertainment":
+            elif bucket == "entertainment" or cat.lower() == "entertainment":
                 days[day_index]["entertainment"] += seconds
 
     # previous period totals for change percent
@@ -120,12 +180,13 @@ async def dashboard(timeRange: str = "this_week", current_user=Depends(get_curre
             continue
         seconds = max(0, (et - st).total_seconds())
         prev_totals["total"] += seconds
-        cat = categorize(s.get("domain"))
-        if cat.lower() == "productive":
+        cat = categorize(s.get("domain"), s.get("url"))
+        bucket = CATEGORY_TO_BUCKET.get(cat, None)
+        if bucket == "productive" or cat.lower() == "productive":
             prev_totals["productive"] += seconds
-        elif cat.lower() in ("social", "social_media", "socialmedia", "social-media"):
+        elif bucket == "social" or cat.lower() in ("social", "social_media", "socialmedia", "social-media"):
             prev_totals["social"] += seconds
-        elif cat.lower() == "entertainment":
+        elif bucket == "entertainment" or cat.lower() == "entertainment":
             prev_totals["entertainment"] += seconds
 
     def make_metric(title: str, key: str):
