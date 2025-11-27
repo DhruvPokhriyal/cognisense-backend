@@ -29,7 +29,8 @@ A FastAPI-based backend service that powers the CogniSense platform for tracking
 | **Database** | Supabase (PostgreSQL) | Managed PostgreSQL with real-time features |
 | **ORM** | SQLModel | Type-safe ORM with Pydantic integration |
 | **ML Library** | Hugging Face Transformers | Pre-trained NLP models |
-| **Authentication** | FastAPI-Users + JWT | User management and auth |
+| **Authentication** | FastAPI-Users + JWT | User management and auth | 
+<!-- We aren't using any ORM and we are using supabase for auth -->
 | **Validation** | Pydantic | Data validation and settings |
 | **Testing** | Pytest | Unit and integration tests |
 | **Dependency Mgmt** | Poetry | Python package management |
@@ -88,6 +89,7 @@ cognisense-backend/
 - Python 3.12+
 - Poetry (for dependency management)
 - Supabase account (for database)
+<!-- - Supabase for auth as well -->
 - Docker (optional, for containerized deployment)
 
 ### 1. Clone Repository

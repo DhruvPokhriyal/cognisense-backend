@@ -262,7 +262,8 @@ cognisense-backend/
 ---
 
 ## 🔑 KEY ARCHITECTURAL DECISIONS
-
+<!-- Need to modify architecture a bit : removing ORM part and putting up supabase -->
+<!-- Moving Time tracking part to frontend as well -->
 ### 1. **Layered Architecture**
 
 ```
@@ -326,7 +327,7 @@ async def lifespan(app: FastAPI):
 **Trade-offs:**
 - Models consume ~2-3 GB RAM
 - No horizontal scaling without external model service (Phase 2 concern)
-
+<!-- Seek out explanation of second trade off -->
 ---
 
 ## 🎯 PERFORMANCE CONSIDERATIONS (MVP)
@@ -357,6 +358,7 @@ async def lifespan(app: FastAPI):
 4. API validates token → Allows/denies access
 ```
 
+<!-- Remove this whole data protection part because it's a black box being maintained by supabase -->
 ### Data Protection
 - ✅ Passwords hashed with bcrypt
 - ✅ JWT tokens with expiration
@@ -368,7 +370,6 @@ async def lifespan(app: FastAPI):
 - Content analysis happens server-side (cannot be fully client-side due to model size)
 - User data isolated by user ID
 - No sharing between users
-- TODO: Add data deletion endpoints (GDPR compliance)
 
 ---
 
@@ -439,6 +440,8 @@ Railway Services:
 | Basic rate limiting | Vulnerable to abuse | Monitor usage, add proper rate limiting with Redis |
 
 ---
+
+<!-- Remove this next steps part and remove emojis from whole codebase -->
 
 ## 📖 NEXT STEPS
 

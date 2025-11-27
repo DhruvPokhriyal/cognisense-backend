@@ -8,7 +8,6 @@ import sys
 from fastapi import APIRouter
 from loguru import logger
 
-# Import routers
 from app.api.v1 import content
 from app.api.v1.dashboard.dashboard import router as dashboard_router
 from app.api.v1.dashboard.insights import router as insights_router

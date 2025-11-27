@@ -1,0 +1,3 @@
+- [x] Understand the logging file
+- [ ] Fix supabase_client.py
+- [ ] Properly configure the main.py for all the routes, properly expose the routes and fix it 

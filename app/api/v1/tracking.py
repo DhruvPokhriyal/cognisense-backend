@@ -4,6 +4,8 @@ Receives activity and engagement data from browser extension and stores for anal
 Phase 1: in-memory store (replace with DB in future)
 """
 
+# Remove deprecated methods from the code
+
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from typing import Optional, List

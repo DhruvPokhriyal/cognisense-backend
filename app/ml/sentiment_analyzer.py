@@ -41,6 +41,7 @@ class SentimentAnalyzer:
             result = model(text)[0]
             
             # Normalize label to uppercase
+            # (Is it possible for setting all characters to uppercase to cause issues? Cause it might hint at anger or something)
             result['label'] = result['label'].upper()
             
             logger.debug(f"Sentiment: {result['label']} ({result['score']:.2f})")
